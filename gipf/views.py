@@ -47,9 +47,13 @@ class GameView:
         b = self.game.board
         try:
             b.move(b.stones[stone], b.fields[field], direction)
-            return {'result': True}
+            rows = b.check4StonesinRow()
+            if rows:
+                return {'result': 'openTaking', 'rows': rows}
+            else:
+                return {'result': True}
         except Exception as e:
-            return {'result': False, 'error': str(e)}
+            return {'result': 'error', 'error': str(e)}
 
 
 @view_defaults(route_name='gamelist_view')

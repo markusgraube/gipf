@@ -12,9 +12,9 @@
     <script type="text/javascript" charset="utf-8">
         function up() {
             this.animate({"fill-opacity": 0.9}, 200);
-console.log(this.nr);
             if (this.dir){
-                this.line.remove();
+                if (this.line != null)
+                    this.line.remove();
                 var in_data = {'field': this.field, 'stone': this.nr, 'direction': this.dir};
                 $.post('/api/game/${id}/move', {'field': this.field, 'stone': this.nr, 'direction': this.dir}, function(data) {
                             updateBoard();

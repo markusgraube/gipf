@@ -44,13 +44,19 @@ class Computer(Player):
 class Game():
     def __init__(self, player1, player2):
         self.board = Board()
-        self.player1 = player1
-        self.player2 = player2
+        self.player_white = player1
+        self.player_black = player2
         self.board = Board()
         self.turn = 0
         self.winner = None
         self.datetime_start = datetime.now()
         self.datetime_end = None
+
+    def winner(self):
+        if self.board.numberOfFreeStones('black')==0:
+            return self.player_white
+        if self.board.numberOfFreeStones('white')==0:
+            return self.player_black
 
 
 class Board():
@@ -201,29 +207,26 @@ class Board():
         field.stone = stone
         # move stones
         field.move_neighbor(direction)
-        # check
-        self.check4StonesinRow()
 
     def check4StonesinRow(self):
+        rows = []
         for key in self.fields:
             field = self.fields[key]
             for direction in ('n', 'ne', 'nw'):
                 for color in ('white', 'black'):
                     number = field.stonesInRow(color, direction)
                     if number >= 4:
+                        rows.append({'field': field, 'dir': direction, 'color': color})
                         log.info("4 in a row @" + field.nr + "-" + direction + ": " + str(number))
+        return rows
 
-
-
-
-
-
-
-    #log.info(field.nr + " - " + direction + ": " + number)
-    #number = field.stonesInRow('white', direction)
-    #if number >= 4:
-    #    log.debug("4 in a row:" + key)
-    #log.debug("finish")
+    def numberOfFreeStones(self, color):
+        ii = 0
+        for key in self.stones:
+            stone = self.stones[key]
+            if stone.color == color and stone.field in ('reserve_white', 'reserve_black'):
+                ii += 1
+        return ii
 
 
 class Field():
