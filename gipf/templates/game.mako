@@ -3,81 +3,93 @@
 
 <%block name="title">Gipf - Game</%block>
 
-<%block name="header">
 
-</%block>
+<%block name="header"></%block>
+
+
 <%block name="scripts">
     <script src="${request.static_url('gipf:static/js/raphael.js')}"></script>
-    <script src="${request.static_url('gipf:static/js/drawBoard.js')}"></script>
+    <script src="${request.static_url('gipf:static/js/gipfBoard.js')}"></script>
     <script type="text/javascript" charset="utf-8">
-        function up() {
-            this.animate({"fill-opacity": 0.9}, 200);
-            if (this.dir){
-                if (this.line != null)
-                    this.line.remove();
-                var in_data = {'field': this.field, 'stone': this.nr, 'direction': this.dir};
-                $.post('/api/game/${id}/move', {'field': this.field, 'stone': this.nr, 'direction': this.dir}, function(data) {
-                            updateBoard();
-                        }
-                    );
-                }
+
+        function sendMove(field, stone, direction){
+            $.post('/api/game/${id}/move', {'field': field, 'stone': stone, 'direction': direction}, function(response_json) {
+                console.log(response_json);
+                  if (response_json.error == false)
+                    makeStoneUnmoveable(stone);
+                updateBoard(response_json.game);
+                updateInfoBox(response_json.game);
+            });
         }
 
-        function initStones(game_id) {
-        $.get('/api/game/'+game_id, function (stones_json) {
-            for (var key in stones_json) {
-                var stone = stones_json[key];
-                stones[key] = drawStone(key, stone.field, stone.color);
-            }
-
-        });
-    }
-
-        function updateBoard () {
-            $.get('/api/game/${id}', function(stones_json) {
-                for (var key in stones_json) {
-                    if (stones_json[key].field != "reserve_white" && stones_json[key].field != "reserve_black")
-                        moveStone(key, stones_json[key].field);
-                }
+        function sendTakeRow(row_id, row) {
+            $.post('/api/game/${id}/take', {'row_id': row_id}, function(response_json) {
+                console.log(response_json);
+                if (response_json.error == false)
+                    releaseStones(row);
+                updateBoard(response_json.game);
+                updateInfoBox(response_json.game);
             });
+        }
+
+        function getUpdateBoard() {
+            $.get('/api/game/${id}', function(game_json) {
+                console.log(game_json);
+                updateBoard(game_json);
+                updateInfoBox(game_json);
+            });
+        }
+
+        function updateInfoBox(game) {
+            if (game.player_on_turn == game.player_white) {
+                $('#white_on_turn').addClass('fa-flag');
+                $('#black_on_turn').removeClass('fa-flag');
+            } else {
+                $('#black_on_turn').addClass('fa-flag');
+                $('#white_on_turn').removeClass('fa-flag');
+            }
+            $('#turns').html(game.turn);
+
         }
 
         $('#action_update').click(function () {
             console.log("update clicked");
-            updateBoard();
+            getUpdateBoard();
         });
 
-
-        //var st = r.set();
-        //st.push(
-        //    r.circle(10, 10, 5),
-        //    r.circle(30, 10, 5)
-        //);
-
         $(document).ready(function(){
+            initRaphael();
             initStones('${id}');
-            updateBoard();
+            getUpdateBoard();
         });
     </script>
 </%block>
 
 
+<%
+    if game.player_on_turn ==  game.player_white:
+        flag_white = "fa-flag"
+        flag_black = ""
+    else:
+        flag_white = ""
+        flag_black = "fa-flag"
+%>
+
+
 <div class="row">
-  <div class="col-md-10">
-    <div class="content">
-      <h1><span class="font-semi-bold">Game</span> <span class="smaller">${id}</span></h1>
-        <div id="holder"></div>
-        <button class="btn btn-default" id="action_update">Update</button>
+    <h1><span class="font-semi-bold">Game</span> <span class="smaller">${id}</span></h1>
+    <div id="game_info" class="col-md-2">
+        <h2>Info</h2>
+        <ul>
+            <li>White: ${game.player_white} <span id="white_on_turn" class="fa ${flag_white} fa-lg"> </span></li>
+            <li>Black: ${game.player_black} <span id="black_on_turn" class="fa ${flag_black} fa-lg"> </span></li>
+            <li>Turns: <span id="turns">${game.turn}</span></li>
+            <li>Time: 12:23</li>
+            <li><button class="btn btn-default" id="action_update">Update</button></li>
+        </ul>
     </div>
-  </div>
-  <div class="col-md-2">
-    <h1>Game Statistics</h1>
-      <ul>
-          <li>White: ${game.player1}</li>
-          <li>Black: ${game.player2}</li>
-          <li>Turns: ${game.turn}</li>
-          <li>Time: 12:23</li>
-      </ul>
-  </div>
+    <div class="col-md-10">
+        <div id="holder"></div>
+    </div>
 </div>
 

@@ -18,12 +18,13 @@ class Configuration():
     def __init__(self):
         self.counter = 0
 
-        m = Human("Markus")
-        s = Human("Stephan")
+        m = "Markus"
+        s = "Stephan"
         self.players = (m, s)
 
-        self.game_list = {'firstGame': Game(m, s), 'secondGame': Game(s, m), 'testGame': Game(s, None)}
-
+        self.running_games = {'firstGame': Game(m, s), 'secondGame': Game(s, m), 'thirdGame': Game(s, m)}
+        self.open_games = {'open1': Game(m, None), 'open2': Game(s, None), 'open3': Game(s, None)}
+        self.finished_games = {'old1': Game(m, s)}
 
 class Player():
     def __init__(self, name):
@@ -47,16 +48,51 @@ class Game():
         self.player_white = player1
         self.player_black = player2
         self.board = Board()
-        self.turn = 0
+        self.turn = 1
         self.winner = None
         self.datetime_start = datetime.now()
         self.datetime_end = None
+        self.player_on_turn = self.player_white
+        self.open_takings = []
+
+    def __json__(self, request):
+         return {'open_takings': self.open_takings,
+                 'player_on_turn': self.player_on_turn,
+                 'player_white': self.player_white,
+                 'player_black': self.player_black,
+                 'turn': self.turn,
+                 'stones': self.board.stones_to_json()}
 
     def winner(self):
-        if self.board.numberOfFreeStones('black')==0:
+        if self.board.numberOfFreeStones('black') == 0:
             return self.player_white
-        if self.board.numberOfFreeStones('white')==0:
+        if self.board.numberOfFreeStones('white') == 0:
             return self.player_black
+
+    def change_player(self):
+        if self.player_on_turn is self.player_white:
+            self.player_on_turn = self.player_black
+        else:
+            self.player_on_turn = self.player_white
+            self.turn += 1
+
+    def check4StonesinRow(self):
+        self.open_takings = []
+        for key in self.board.fields:
+            field = self.board.fields[key]
+            for direction in ('n', 'ne', 'nw'):
+                for color in ('white', 'black'):
+                    number = field.stonesInRowWithColor(color, direction)
+                    if number >= 4:
+                        stones_in_row = field.neighbor[direction].stonesInRow(direction)
+                        stones_in_row.extend(field.stonesInRow(self.board.opposite_neighbor[direction]))
+                        self.open_takings.append({'stones': stones_in_row, 'color': color})
+                        log.info("row @ " + field.nr + "-" + direction + ": " + str(number))
+
+    def move(self, stone_id, field_id, direction):
+        self.board.move(self.board.stones[stone_id], self.board.fields[field_id], direction)
+        self.check4StonesinRow()
+
 
 
 class Board():
@@ -71,6 +107,13 @@ class Board():
         self.stones = {}
         self.reserve_white = Field("reserve_white")
         self.reserve_black = Field("reserve_black")
+        self.out = Field("out")
+        self.opposite_neighbor = {'n': 's',
+                                  'nw': 'se',
+                                  'sw': 'ne',
+                                  's': 'n',
+                                  'se': 'nw',
+                                  'ne': 'sw'}
 
         self._create_fields()
         self._create_stones()
@@ -167,13 +210,13 @@ class Board():
         for i in range(12):
             w = Stone(i, 'white', self.reserve_white)
             b = Stone(15 + i, 'black', self.reserve_black)
-            self.stones[i]=w
-            self.stones[i+15]=b
+            self.stones[str(i)]=w
+            self.stones[str(i+15)]=b
         for i in range(3):
             w = Stone(12 + i, 'white', self.reserve_white, True)
             b = Stone(27 + i, 'black', self.reserve_black, True)
-            self.stones[i+12]=w
-            self.stones[i+27]=b
+            self.stones[str(i+12)]=w
+            self.stones[str(i+27)]=b
 
 
     def _connect_sw_ne(self, sw, ne):
@@ -189,11 +232,11 @@ class Board():
         south.neighbor['n'] = north
 
 
-    def toJSON(self):
+    def stones_to_json(self):
         json = {}
         for key in self.stones:
             stone = self.stones[key]
-            json[key] = {'field': stone.field.nr, 'color': stone.color, 'gipf': stone.gipf}
+            json[stone.id] = {'field': stone.field.nr, 'color': stone.color, 'gipf': stone.gipf}
         return json
 
 
@@ -208,17 +251,7 @@ class Board():
         # move stones
         field.move_neighbor(direction)
 
-    def check4StonesinRow(self):
-        rows = []
-        for key in self.fields:
-            field = self.fields[key]
-            for direction in ('n', 'ne', 'nw'):
-                for color in ('white', 'black'):
-                    number = field.stonesInRow(color, direction)
-                    if number >= 4:
-                        rows.append({'field': field, 'dir': direction, 'color': color})
-                        log.info("4 in a row @" + field.nr + "-" + direction + ": " + str(number))
-        return rows
+
 
     def numberOfFreeStones(self, color):
         ii = 0
@@ -227,6 +260,8 @@ class Board():
             if stone.color == color and stone.field in ('reserve_white', 'reserve_black'):
                 ii += 1
         return ii
+
+
 
 
 class Field():
@@ -263,11 +298,20 @@ class Field():
         self.neighbor[direction].stone = self.stone
         self.stone = None
 
-    def stonesInRow(self, color, direction):
+    def stonesInRowWithColor(self, color, direction):
         if self.stone and self.stone.color == color:
-            return 1 + self.neighbor[direction].stonesInRow(color, direction)
+            return 1 + self.neighbor[direction].stonesInRowWithColor(color, direction)
         else:
             return 0
+
+    def stonesInRow(self, direction):
+        if self.stone:
+            list = self.neighbor[direction].stonesInRow(direction)
+            list.append(self.stone.id)
+            return list
+        else:
+            return []
+
 
 
 class Stone():
@@ -276,8 +320,9 @@ class Stone():
     """
 
     def __init__(self, stone_id, color, field, gipf=False):
-        self.id = stone_id
+        self.id = str(stone_id)
         self.color = color
         self.field = field
         self.gipf = gipf
+
 

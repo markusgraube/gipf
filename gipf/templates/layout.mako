@@ -40,21 +40,36 @@
 
             <div id="navbar" class="collapse navbar-collapse">
               <ul class="nav navbar-nav navbar-left">
-                <li><a href="/game"><i class="fa fa-trophy"></i> Game List</a></li>
-                <li><a href="/settings"><i class="fa fa-cogs"></i> Settings</a></li>
+                <li><a href="/game"><i class="fa fa-trophy fa-fw"></i> Game List</a></li>
+                <li><a href="/settings"><i class="fa fa-cogs fa-fw"></i> Settings</a></li>
               </ul>
               <ul class="nav navbar-nav navbar-right">
-                <li><a href="/docs"><i class="fa fa-book"></i> Docs</a></li>
-                <li><a href="https://github.com/Pylons/pyramid"><i class="fa fa-github"></i> Github Project</a></li>
-                <li><a href="http://www.gipf.com/"><i class="fa fa-home"></i> Gipf Website</a></li>
+                <li><a href="/docs"><i class="fa fa-book fa-fw"></i> Docs</a></li>
+                <li><a href="https://github.com/markusgraube/gipf"><i class="fa fa-github fa-fw"></i> Project</a></li>
+                <li><a href="http://www.gipf.com/"><i class="fa fa-home fa-fw"></i> Gipf Website</a></li>
                 <li class="divider"></li>
-                <li><a href="/login"><i class="fa fa-user"></i> Login</a></li>
+                % if login:
+
+                  <li><a href="/logout"><i class="fa fa-sign-out fa-fw"></i> Logout ${login}</a></li>
+                % else:
+                    <li><a href="/login"><i class="fa fa-sign-in fa-fw"></i> Login</a></li>
+                % endif
               </ul>
             </div>
         </div>
     </nav>
 
        <div class="container">
+           % if message:
+               <div class="row">
+                   <div class="message-box">
+                       <div class="alert alert-warning alert-dismissible" role="alert">
+                          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                          ${message}
+                        </div>
+                   </div>
+               </div>
+           % endif
 
         ${next.body()}
 

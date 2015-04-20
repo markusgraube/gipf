@@ -8,7 +8,7 @@
   <div class="col-md-10">
     <div class="content">
       <h1><span class="font-semi-bold">Gipf</span> <span class="smaller">online game</span></h1>
-      <p class="lead">Welcome to <span class="font-normal">${project}</span>, an&nbsp;application generated&nbsp;by<br>the <span class="font-normal">Pyramid Web Framework 1.5.4</span>.</p>
+      <p class="lead">Welcome to <span class="font-normal">Gipf</span>, an&nbsp;application generated&nbsp;by<br>the <span class="font-normal">Pyramid Web Framework 1.5.4</span>.</p>
     </div>
   </div>
 </div>

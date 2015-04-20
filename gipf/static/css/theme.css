@@ -36,56 +36,57 @@ p {
   margin-top: 10px;
   font-size: 60px;
 }
-.starter-template .content h1 .smaller {
+.content h1 .smaller {
   font-size: 40px;
   color: #f2b7bd;
 }
-.starter-template .content .lead {
+.content .lead {
   font-size: 25px;
   color: #f2b7bd;
 }
-.starter-template .content .lead .font-normal {
+.content .lead .font-normal {
   color: #ffffff;
 }
-.starter-template .links {
+.links {
   float: right;
   right: 0;
   margin-top: 125px;
 }
-.starter-template .links ul {
+.links ul {
   display: block;
   padding: 0;
   margin: 0;
 }
-.starter-template .links ul li {
+.links ul li {
   list-style: none;
   display: inline;
   margin: 0 10px;
 }
-.starter-template .links ul li:first-child {
+.links ul li:first-child {
   margin-left: 0;
 }
-.starter-template .links ul li:last-child {
+.links ul li:last-child {
   margin-right: 0;
 }
-.starter-template .links ul li.current-version {
+.links ul li.current-version {
   color: #f2b7bd;
   font-weight: 400;
 }
-.starter-template .links ul li a {
+.links ul li a {
   color: #ffffff;
 }
-.starter-template .links ul li a:hover {
+.links ul li a:hover {
   text-decoration: underline;
 }
-.starter-template .links ul li .icon-muted {
+.links ul li .icon-muted {
   color: #eb8b95;
   margin-right: 5px;
 }
-.starter-template .links ul li:hover .icon-muted {
+.links ul li:hover .icon-muted {
   color: #ffffff;
 }
-.starter-template .copyright {
+
+.copyright {
   margin-top: 10px;
   font-size: 0.9em;
   color: #f2b7bd;
@@ -93,6 +94,7 @@ p {
   float: right;
   right: 0;
 }
+
 @media (max-width: 1199px) {
   .starter-template .content h1 {
     font-size: 45px;
