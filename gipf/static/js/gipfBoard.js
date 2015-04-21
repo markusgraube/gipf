@@ -197,7 +197,7 @@ function drawBoard() {
 
 }
 
-function initStones(game_id) {
+function initStones(game_id, user) {
     $.get('/api/game/'+game_id, function (game_json) {
         for (var key in game_json.stones) {
             var stone = game_json.stones[key];
@@ -205,7 +205,8 @@ function initStones(game_id) {
             r_stones[key] = drawStone(key, stone.field, stone.color);
             var r_stone_set = r.setFinish();
             r_stone_set.attr({"fill-opacity":0.9, "stroke-width": 4});
-            if (stone.field=="reserve_black" || stone.field=="reserve_white")
+            if ( (stone.color == 'white' && user==game_json.player_white  && stone.field=="reserve_white") ||
+                 (stone.color == 'black' && user==game_json.player_black  && stone.field=="reserve_black") )
                 makeStoneMoveable(key);
             else
                 makeStoneUnmoveable(key);

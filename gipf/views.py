@@ -11,14 +11,8 @@ import logging
 log = logging.getLogger(__name__)
 
 
-@notfound_view_config(renderer='templates/notfound.mako')
-def notfound(request):
-    return {'request': request}
 
 
-@view_config(route_name='home', renderer='templates/home.mako')
-def home_view(request):
-    return {'logged_in': request.authenticated_userid}
 
 
 class BaseView(object):
@@ -32,7 +26,16 @@ class HTMLView(BaseView):
         super(HTMLView, self).__init__(request)
         self.session = request.session
 
-        self.response['login'] = self.session.get('login')
+        self.response['user_logged_in'] = self.session.get('user_logged_in')
+
+    @view_config(route_name='home', renderer='templates/home.mako')
+    def home_view(self):
+        return self.response
+
+    @notfound_view_config(renderer='templates/notfound.mako')
+    def notfound(self):
+        self.response['request'] = self.request
+        return self.response
 
 
 class APIView(BaseView):
@@ -76,31 +79,23 @@ class GameView(HTMLView):
         field = self.params.get('field')
         direction = self.params.get('direction')
         stone = self.params.get('stone', 0)
-        log.debug(stone)
+
         try:
-            self.game.move(stone, field, direction)
-            if not self.game.open_takings:
-                self.game.change_player()
+            self.game.move(self.session.get('user_logged_in', ""), stone, field, direction)
             return {'error': False, 'game': self.game}
         except Exception as e:
             return {'error': True, 'error': str(e), 'game': self.game}
-
 
     @view_config(route_name='take_api', renderer='json')
     def take_api(self):
         log.debug("Take API: " + str(self.params))
         row = int(self.params.get('row_id', None))
         selected_taking = self.game.open_takings[row]
-        log.debug(selected_taking)
-        for stone_id in selected_taking['stones']:
-            stone = self.game.board.stones[stone_id]
-            stone.field.stone = None
-            if stone.color == 'white':
-                stone.field = self.game.board.reserve_white
-            else:
-                stone.field = self.game.board.out
-        self.game.open_takings = []
-        return {'error': False, 'game': self.game}
+        try:
+            self.game.take_stones(self.session.get('user_logged_in', ""), selected_taking)
+            return {'error': False, 'game': self.game}
+        except Exception as e:
+            return {'error': True, 'error': str(e), 'game': self.game}
 
 
 
@@ -124,7 +119,7 @@ class GameListView(HTMLView):
 
     @view_config(route_name='game_new')
     def game_new(self):
-        user = self.session.get("login")
+        user = self.session.get('user_logged_in')
         if not user:
             raise HTTPFound("login")
 
@@ -145,7 +140,7 @@ class GameListView(HTMLView):
 
     @view_config(route_name='game_join')
     def game_join(self):
-        user = self.session.get("login")
+        user = self.session.get("user_logged_in")
         if not user:
             raise HTTPFound("login")
 
@@ -179,13 +174,13 @@ def login_view(request):
     password = ''
     if 'form.submitted' in request.params:
         login = request.params['login']
-        request.session['login'] = login
         password = request.params['password']
-        if USERS.get(login) == password:
-            headers = remember(request, login)
-            return HTTPFound(location = came_from,
-                             headers = headers)
-        message = 'Failed login'
+        if login == password:
+            request.session['user_logged_in'] = login
+            message = "Login successful"
+            return HTTPFound(location = came_from)
+        else:
+            message = 'Failed login'
 
     return dict(
         message = message,
@@ -200,4 +195,5 @@ def login_view(request):
 def logout_view(request):
     headers = forget(request)
     loc = request.route_url('home')
+    request.session['user_logged_in'] = None
     return HTTPFound(location=loc, headers=headers)

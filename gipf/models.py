@@ -89,9 +89,27 @@ class Game():
                         self.open_takings.append({'stones': stones_in_row, 'color': color})
                         log.info("row @ " + field.nr + "-" + direction + ": " + str(number))
 
-    def move(self, stone_id, field_id, direction):
+
+    def move(self, user, stone_id, field_id, direction):
+        if user != self.player_on_turn:
+            raise Exception(user + " is not on turn")
         self.board.move(self.board.stones[stone_id], self.board.fields[field_id], direction)
         self.check4StonesinRow()
+        # change player
+        if not self.open_takings:
+                self.change_player()
+
+    def takeStones(self, user, selected_taking):
+        if user != self.player_on_turn:
+            raise Exception(user + " is not on turn")
+        for stone_id in selected_taking['stones']:
+            stone = self.board.stones[stone_id]
+            stone.field.stone = None
+            if stone.color == 'white':
+                stone.field = self.board.reserve_white
+            else:
+                stone.field = self.board.out
+        self.open_takings = []
 
 
 
@@ -250,8 +268,6 @@ class Board():
         field.stone = stone
         # move stones
         field.move_neighbor(direction)
-
-
 
     def numberOfFreeStones(self, color):
         ii = 0
